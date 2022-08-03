@@ -4,6 +4,10 @@ from codecs import utf_8_decode
 from curses.ascii import isblank
 import os, subprocess
 
+groupingsFilename = 'groupings.txt'
+step2InstructionsFilename = 'step2-instructsions.txt'
+processCompleteFilename = 'chapterization-complete.txt'
+
 def isAudioFile(filename):
     audioFileExtensions = ['mp3', 'm4a', 'm4b']
     for ext in audioFileExtensions:
@@ -109,7 +113,6 @@ def step1():
     os.remove(concatAudioFilename)
 
 
-groupingsFilename = 'groupings.txt'
 
 def groupAndSplitEvenly(groupFileList, groupDirectoryName):
     concatAudioFilename = os.path.join(groupDirectoryName, 'concat.mp3')
@@ -166,14 +169,53 @@ def step2():
                 os.remove(inp)
             groupFileList = []
 
+def createStep2InstructionsFile():
+    with open(step2InstructionsFilename, 'w') as instructionsFile:
+        instructions = [
+            f'To start step 2, create a file named {groupingsFilename} with the names of all of the mp3 files in this directory. ($ ls *.mp3 > {groupingsFilename})',
+            f'Edit this file by inserting chapter names wherever you want a new chapter to start. For example:',
+            '',
+            '# groupings.txt',
+            'prologue',
+            '00.mp3',
+            '01.mp3',
+            '',
+            'chap1',
+            '02.mp3',
+            '03.mp3',
+            '04.mp3',
+            '05.mp3',
+            '',
+            'chap2',
+            '06.mp3',
+            '07.mp3',
+            '... and so on'
+            '',
+            'Then just run the command again in this directory.'
+        ]
 
+        for line in instructions:
+            print(line, file=instructionsFile)
 
+def createProcessCompleteFile():
+    with open(processCompleteFilename, 'w') as f:
+        print('delete this file to restart process', file=f)
 
 def main():
-    if not os.path.exists(groupingsFilename):
-        step1()
+    if os.path.exists(processCompleteFilename):
+        print(f'Process is complete. To start over, delete {processCompleteFilename}')
     else:
-        step2()
+        if not os.path.exists(groupingsFilename):
+            if os.path.exists(step2InstructionsFilename):
+                print(f'read {step2InstructionsFilename}, or delete it to start over')
+            else:
+                step1()
+                createStep2InstructionsFile()
+        else:
+            step2()
+            createProcessCompleteFile()
+            os.remove(groupingsFilename)
+            os.remove(step2InstructionsFilename)
 
 if __name__ == '__main__':
     main()
